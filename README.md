@@ -29,5 +29,6 @@ chmod +x run-ec2.sh
 </pre>
 
 See an example of use below:
+![](run-ec2.png)
 
 Visit my Blog [https://bluehat.site/](https://bluehat.site/)
