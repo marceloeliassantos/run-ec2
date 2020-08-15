@@ -4,7 +4,7 @@
 #Version: 1.0
 #Last update: Aug 9, 2020
 #Description: This script is for creating an ec2 windows instance with keypair, group security and on a specific subnet and during startup changes the computer name.
-#Repo: 
+#Repo: https://github.com/marceloeliassantos/run-ec2
 #Website: https://bluehat.site/
 #License: MIT License
 
