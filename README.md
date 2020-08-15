@@ -22,8 +22,9 @@ See, that I just hit <code> Enter </code> for the first two options, because I a
 To use this shell script, enter the following commands:
  
 <pre>mkdir aws
-chmod +x run-ec2.sh
+cd aws
 git clone https://github.com/marceloeliassantos/run-ec2
+chmod +x run-ec2.sh
 ./run-ec2.sh
 </pre>
 
