@@ -19,6 +19,7 @@ See, that I just hit <code> Enter </code> for the first two options, because I a
 * Before running this shell script, open the code and try to understand what it does. Change it as needed.
 * The userdata here is for Windows only.
 * If an error appears saying that the SubnetId does not exist, it can be for two reasons: 1- It does not really exist. 2- You can be in the different region of the SubnetId that you specified. Which may be the most common mistake.
+* When choosing the option to use the password defined in userdata, wait at least 3 minutes before trying to make an RDP connection.
 
 To use this shell script, enter the following commands:
  
