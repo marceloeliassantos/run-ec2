@@ -30,6 +30,6 @@ chmod +x run-ec2.sh
 </pre>
 
 See an example of use below:
-![](run-ec2.png)
+![](run-ec2-userdata-password.png)
 
 Visit my Blog [https://bluehat.site/](https://bluehat.site/)
