@@ -39,21 +39,35 @@ until [[ $HostName = *[!\ ]* ]]; do
 	
 #Removes special characters or spaces	
 HostName=$(sed 's/[^0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-]//g' <<< "$HostName")
-
 echo
-
-#Add SG to security group naming standard
-SG_Name+=${EC2_TagName}" SG" 
-
-#The Key Pair will be the name of the hostname plus the word keypair.
-KeyPairName+=${HostName}"-keypair"
 
 #Check parameter changes
 changed=0
 
+default_pass_opt=1
+echo "How do you want to set the Local Administrator password?"
+echo "   1) Using what is defined in userdata.conf"
+echo "   2) Randomly with key pair"
+read -p "Default is [$default_pass_opt]: " pass_opt
+until [[ -z "$pass_opt" || "$pass_opt" =~ ^[12]$ ]]; do
+	echo "$pass_opt: invalid selection."
+	read -p "Default is [$default_pass_opt]: " pass_opt
+	
+done
+[[ -z "$pass_opt" ]] && pass_opt="$default_pass_opt"
+
+if [[ $pass_opt != $default_pass_opt ]]; then
+   changed=1     
+   echo "$(sed -r 's/(default_pass_opt)=(.*)/\1='$pass_opt'/g' run-ec2.tmp)" > run-ec2.tmp
+fi
+
+#Add SG to security group naming standard
+SG_Name+=${EC2_TagName}" SG" 
+
+echo
 default_inst_type="m4.xlarge"
 echo "Enter the instance type:"
-read -p "AMI ID [$default_inst_type]:" inst_Type 
+read -p "Instance type [$default_inst_type]:" inst_Type 
 [[ -z "$inst_Type" ]] && inst_Type="$default_inst_type"
 echo
 
@@ -89,7 +103,6 @@ echo "Checking the VPC of the provided subnet..."
 vpc_id=$(aws ec2 describe-subnets --subnet-ids $SubnetId --query 'Subnets[0].VpcId' --output text)
 
 echo
-
 echo "EC2 instance creation script is ready to begin."
 read -n1 -r -p "If all of the above information is correct, Press any key to continue or CTRL+C to exit..."
 echo
@@ -111,10 +124,10 @@ fi
 
 ###Create Security Group Rules
 echo "Creating group security rules... "
-#RDPs
+#RDP Access
 aws ec2 authorize-security-group-ingress --group-id $SgId --ip-permissions IpProtocol=tcp,FromPort=3389,ToPort=3389,IpRanges='[{CidrIp='$public_ip',Description="Access from Home"}]' > /dev/null
 
-#SSH
+#SSH Access
 #aws ec2 authorize-security-group-ingress --group-id $SgId --ip-permissions IpProtocol=tcp,FromPort=22,ToPort=22,IpRanges='[{CidrIp=172.16.0.0/24,Description="Access from somewhere"}]' > /dev/null
 
 ###Http & Https
@@ -125,28 +138,53 @@ aws ec2 authorize-security-group-ingress --group-id $SgId --ip-permissions IpPro
 aws ec2 authorize-security-group-ingress --group-id $SgId --ip-permissions IpProtocol="-1",FromPort=-1,ToPort=-1,IpRanges='[{CidrIp=9.9.9.9/32,Description="Quad9"}]' > /dev/null
 aws ec2 authorize-security-group-ingress --group-id $SgId --ip-permissions IpProtocol="-1",FromPort=-1,ToPort=-1,IpRanges='[{CidrIp=1.1.1.1/32,Description="Cloudflare"}]' > /dev/null
 
-echo "Creating keypair..."
-####Create Key-pair
-aws ec2 create-key-pair --key-name $KeyPairName --query 'KeyMaterial' --output text > "$KeyPairName.pem"
-
-echo "Creating instance..."
-
-#Change the hostname inside of the userdata.conf
-echo "$(sed 's/ComputerName/'$HostName'/g' userdata.conf)" > userdata.conf
 
 ####EC2 Creation
-instanceId=$(aws ec2 run-instances --image-id $AMI_Key --count 1 --instance-type $inst_Type --key-name $KeyPairName --subnet-id  $SubnetId --associate-public-ip-address --user-data file://userdata.conf --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value='"$EC2_TagName"'}]' 'ResourceType=volume,Tags=[{Key=Name,Value='"$EC2_TagName"'}]'  --security-group-ids $SgId --query 'Instances[0].InstanceId' --output text)
+case $pass_opt in
+        1) #Userdata password
+        #Change the hostname inside of the userdata.conf
+        echo "$(sed 's/ComputerName/'$HostName'/g' userdata-with-password.conf)" > userdata-with-password.conf
 
-aws ec2 wait instance-running --instance-ids $instanceId
+        echo "Creating instance..."
+        instanceId=$(aws ec2 run-instances --image-id $AMI_Key --count 1 --instance-type $inst_Type --subnet-id  $SubnetId --associate-public-ip-address --user-data file://userdata-with-password.conf --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value='"$EC2_TagName"'}]' 'ResourceType=volume,Tags=[{Key=Name,Value='"$EC2_TagName"'}]'  --security-group-ids $SgId --query 'Instances[0].InstanceId' --output text)
+       
+        aws ec2 wait instance-running --instance-ids $instanceId
 
-#Change the hostname inside of the userdata.conf back to ComputerName
-echo "$(sed 's/'$HostName'/ComputerName/g' userdata.conf)" > userdata.conf
+        #Change the hostname inside of the userdata.conf back to ComputerName
+        echo "$(sed 's/'$HostName'/ComputerName/g' userdata-with-password.conf)" > userdata-with-password.conf
+        
+        ;;
+        2) #Randon password with key pair
+        #Change the hostname inside of the userdata.conf
+        echo "$(sed 's/ComputerName/'$HostName'/g' userdata-without-password.conf)" > userdata-without-password.conf
+        
+        #The Key Pair will be the name of the hostname plus the word keypair.
+        KeyPairName+=${HostName}"-keypair"
+        
+        echo "Creating keypair..."
+        ####Create Key-pair
+        aws ec2 create-key-pair --key-name $KeyPairName --query 'KeyMaterial' --output text > "$KeyPairName.pem"
+        
+        echo "Creating instance..."
+        instanceId=$(aws ec2 run-instances --image-id $AMI_Key --count 1 --instance-type $inst_Type --key-name $KeyPairName --subnet-id  $SubnetId --associate-public-ip-address --user-data file://userdata-without-password.conf --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value='"$EC2_TagName"'}]' 'ResourceType=volume,Tags=[{Key=Name,Value='"$EC2_TagName"'}]'  --security-group-ids $SgId --query 'Instances[0].InstanceId' --output text)
+        
+        aws ec2 wait instance-running --instance-ids $instanceId
+
+        #Change the hostname inside of the userdata.conf back to ComputerName
+        echo "$(sed 's/'$HostName'/ComputerName/g' userdata-without-password.conf)" > userdata-without-password.conf
+        
+        ;;
+esac        
 
 echo "Creation finished. This is the instance ID: $instanceId"
 PrivateIP=$(aws ec2 describe-instances --instance-ids $instanceId --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)
 echo "Private IP: $PrivateIP"
-echo "Key pair: "
-cat $KeyPairName.pem
+
+#Only display the key pair if chosen random password
+if [[ $pass_opt -eq 2 ]]; then
+   echo "Key pair: "
+   cat $KeyPairName.pem
+fi 
 
 #Replaces the temporary file with the original one to get the latest updated parameters.
 if [[ $changed -eq 1 ]]; then
