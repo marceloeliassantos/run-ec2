@@ -20,6 +20,7 @@ See, that I just hit <code> Enter </code> for the first two options, because I a
 * The userdata here is for Windows only.
 * If an error appears saying that the SubnetId does not exist, it can be for two reasons: 1- It does not really exist. 2- You can be in the different region of the SubnetId that you specified. Which may be the most common mistake.
 * When choosing the option to use the password defined in userdata, wait at least 3 minutes before trying to make an RDP connection.
+* If the option of random password with key pair is chosen, in addition to displaying a cryptographic key in the terminal, a file will be created with the content of the key in the same directory as this script, in the following format: hostname-keypair.pem
 
 To use this shell script, enter the following commands:
  
