@@ -31,6 +31,6 @@ chmod +x run-ec2.sh
 ./run-ec2.sh
 </pre>
 See the tutorial video for this script on youtube
-[![](https://bluehat.site/images/youtube-screen.png)](https://youtu.be/-1Qh28pwDNg "Click here to watch.")
+[![](https://bluehat.site/images/youtube-screen.png)](https://www.youtube.com/watch?v=-1Qh28pwDNg "Click here to watch.")
 
 Visit my Blog [https://bluehat.site/](https://bluehat.site/)
