@@ -31,7 +31,6 @@ chmod +x run-ec2.sh
 ./run-ec2.sh
 </pre>
 
-See an example of use below:
-![](run-ec2-userdata-password.png)
+[![See the tutorial video for this script on youtube](https://bluehat.site/images/youtube-screen.png)](https://www.youtube.com/embed/-1Qh28pwDNg)
 
 Visit my Blog [https://bluehat.site/](https://bluehat.site/)
