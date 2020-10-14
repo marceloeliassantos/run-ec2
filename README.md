@@ -5,7 +5,7 @@ This shell script creates EC2 instances and, in addition, during the process per
 * Adds tags on Instance, Group Security and instance volumes
 * Read a powershall userdata where it change the hostname and administrator password for Windows 2016 or higher
 
-To choose which region the instance will be created in, run <code> aws configure </code>, and specify the region as shown below:
+Before executing this script choose the region where the instance will be created in, run <code> aws configure </code>, and specify the region as shown below:
 
 <pre>aws configure
 AWS Access Key ID [****************5JKA]:
